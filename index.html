@@ -1,0 +1,2845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Circuit Board Designer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #1a1a2e;
+            --primary-accent: #9f55ff; /* Vibrant Purple */
+            --primary-accent-dark: #7c3aed; /* Darker Purple */
+            --secondary-bg: #2a2a4e;
+            --glass-bg: rgba(42, 42, 78, 0.5);
+            --glass-border: rgba(159, 85, 255, 0.3); /* Purple-tinted border */
+            --text-light: #f0f4f8;
+            --text-medium: #a3b8d7;
+            --text-dark: #1e293b;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --warning-color: #f39c12;
+            --neutral-color: #6c757d;
+        }
+
+        /* START: Light Mode Theme */
+        body.light-mode {
+            --dark-bg: #e9eef2; /* Light Grayish Blue */
+            --primary-accent: #007bff; /* Blue */
+            --primary-accent-dark: #0056b3; /* Darker Blue */
+            --secondary-bg: #ffffff; /* White */
+            --glass-bg: rgba(255, 255, 255, 0.6); /* Light glass effect */
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-light: #1e293b; /* Dark Slate Gray for text */
+            --text-medium: #475569; /* Lighter Slate Gray */
+            --text-dark: #f0f4f8; /* For text on dark buttons */
+        }
+
+        body.light-mode header h1 {
+            text-shadow: none;
+        }
+        
+        body.light-mode .custom-file-upload {
+            background: linear-gradient(90deg, var(--primary-accent-dark) 0%, var(--primary-accent) 100%);
+        }
+
+        body.light-mode #svgDropbox {
+            background: #f0f0f0;
+            border-color: #bbbbbb;
+            color: #333333;
+        }
+        body.light-mode #svgDropbox:hover {
+            background-color: #e8e8e8;
+        }
+        body.light-mode .uploaded-svg-thumbnail {
+            background: #ffffff;
+            border-color: #dddddd;
+        }
+        body.light-mode input[type="text"], 
+        body.light-mode input[type="number"], 
+        body.light-mode input[type="password"], 
+        body.light-mode select {
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--text-light);
+            border-color: #cccccc;
+        }
+        
+        body.light-mode input:focus, 
+        body.light-mode select:focus {
+             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        
+        body.light-mode #savePanel h3 {
+             text-shadow: none;
+        }
+
+        body.light-mode #drawingBoard {
+            background-color: #ffffff;
+        }
+        body.light-mode .modal-content {
+            background: linear-gradient(135deg, var(--secondary-bg), var(--dark-bg));
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
+        }
+        body.light-mode #drawingClearBtn {
+            color: var(--text-light) !important;
+        }
+        body.light-mode ::-webkit-scrollbar-thumb {
+            background: #c5c9d0;
+        }
+       
+        body.light-mode ::-webkit-scrollbar-thumb:hover {
+            background: #a8adb5;
+        }
+        
+        body.light-mode #zoomControls {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+        body.light-mode #zoomControls button {
+            background: rgba(0, 0, 0, 0.1);
+            color: var(--text-light);
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+        body.light-mode #zoomControls button:hover {
+            background-color: var(--primary-accent);
+            color: var(--text-dark);
+        }
+        body.light-mode #zoomValue {
+            color: var(--text-light);
+        }
+        body.light-mode #zoomSlider {
+            background: #e0e0e0;
+        }
+        body.light-mode #zoomSlider::-webkit-slider-thumb {
+            background: var(--primary-accent);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--secondary-bg) 100%);
+            overflow: hidden;
+            color: var(--text-light);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-accent);
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-accent-dark);
+        }
+
+        header {
+            background: rgba(26, 26, 46, 0.5);
+            backdrop-filter: blur(10px);
+            color: var(--text-light);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        header h1 {
+            font-size: 1.8em;
+            margin: 0;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: var(--text-light);
+            text-shadow: 0 0 5px var(--primary-accent);
+        }
+        header .header-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        button, .tool-btn, .custom-file-upload {
+            font-family: inherit;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-light);
+            background-color: transparent;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:active, .tool-btn:active, .custom-file-upload:active {
+            transform: scale(0.97);
+            box-shadow: none;
+        }
+
+        header .header-buttons button {
+            padding: 8px 16px;
+        }
+
+        header .header-buttons button:hover {
+             background-color: var(--glass-border);
+             border-color: var(--primary-accent);
+             box-shadow: 0 0 8px var(--primary-accent);
+        }
+
+        header #logoutButton {
+            background-color: var(--danger-color);
+        }
+        header #logoutButton:hover {
+            box-shadow: 0 0 8px var(--danger-color);
+        }
+
+        #app {
+            display: flex;
+            flex: 1;
+            padding: 10px;
+            gap: 10px;
+            min-height: 0;
+            position: relative;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 30;
+            background-color: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            color: var(--text-light);
+            border: 1px solid var(--glass-border);
+            padding: 15px 5px;
+            cursor: pointer;
+            border-radius: 0 8px 8px 0;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transition: all 0.3s ease;
+        }
+        .sidebar-toggle:hover {
+            color: var(--primary-accent);
+            text-shadow: 0 0 6px var(--primary-accent);
+        }
+
+        #left-sidebar-toggle { left: 0; }
+        #right-sidebar-toggle { right: 0; border-radius: 8px 0 0 8px; }
+
+        #sidebar, #savePanel {
+            background: var(--glass-bg);
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            transition: transform 0.3s ease-in-out;
+            z-index: 10;
+        }
+
+        #sidebar {
+            width: 150px;
+            padding: 10px;
+            display: flex; 
+            flex-direction: column;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            bottom: 10px;
+            transform: translateX(-110%);
+        }
+
+        #app.sidebar-open #sidebar { transform: translateX(0); }
+        #savePanel {
+            width: 150px; padding: 15px; overflow-y: auto; position: absolute; right: 10px; top: 10px; bottom: 10px; transform: translateX(110%);
+        }
+        #app.save-panel-open #savePanel { transform: translateX(0); }
+        
+        #sidebar h2 {
+            margin-top: 0;
+            color: var(--primary-accent);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+            text-shadow: 0 0 4px var(--primary-accent);
+        }
+
+        .upload-section, .modal-content {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+
+        .upload-section {
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            color: var(--text-medium);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1; 
+            min-height: 0; 
+        }
+        .upload-section h2 {
+            font-size: 1.1em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            margin-top: 0;
+        }
+        .custom-file-upload {
+            padding: 10px 18px;
+            background: linear-gradient(90deg, var(--primary-accent-dark) 0%, var(--primary-accent) 100%);
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1em;
+            text-align: center;
+            border: none;
+        }
+        .custom-file-upload:hover {
+            box-shadow: 0 0 10px var(--primary-accent);
+            transform: translateY(-2px);
+        }
+        
+        #svgDropbox {
+            background: #ffffff;
+            border: 2px dashed #cccccc;
+            color: #555555;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.95em;
+            text-align: center;
+            transition: background-color 0.2s, border-color 0.2s;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-content: flex-start; 
+            justify-content: center;
+            overflow-y: auto; 
+            flex-grow: 1;
+            min-height: 0; 
+        }
+        #svgDropbox.empty { align-items: center; justify-content: center; }
+        #svgDropbox:hover {
+            background-color: #f8f8f8;
+            border-color: var(--primary-accent-dark);
+        }
+
+        .uploaded-svg-thumbnail {
+            width: 60px; height: 60px; object-fit: contain; border: 1px solid #e0e0e0; border-radius: 8px; background: #fdfdfd; cursor: grab; padding: 4px; position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .uploaded-svg-thumbnail:hover {
+            transform: scale(1.1); border-color: var(--primary-accent); box-shadow: 0 0 10px var(--primary-accent); z-index: 5;
+        }
+        .uploaded-svg-thumbnail:active { cursor: grabbing; }
+        .uploaded-svg-thumbnail svg { max-width: 100%; max-height: 100%; display: block; filter: none; }
+
+        #main {
+            flex: 1; padding:0; position: relative; background: transparent; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; transition: margin 0.3s ease-in-out;
+        }
+        #app.sidebar-open #main { margin-left: 160px; }
+        #app.save-panel-open #main { margin-right: 160px; }
+
+        input[type="text"], input[type="number"], input[type="password"], select {
+            border: 1.5px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 9px 12px;
+            font-size: 1em;
+            background: rgba(0,0,0,0.3);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-light);
+        }
+        input:focus, select:focus {
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(159, 85, 255, 0.3);
+            outline: none;
+        }
+
+        #textControls, #lineControls {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+            border: 1px solid var(--glass-border);
+            display: none;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            z-index: 15;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #textControls input[type="color"] { padding: 0; border: none; border-radius: 5px; width: 40px; height: 36px; cursor: pointer; }
+        #textControls button, #lineControls button { background: var(--primary-accent-dark); color: var(--text-light); border:none; }
+        #textControls button:hover, #lineControls button:hover { background: var(--primary-accent); box-shadow: 0 0 8px var(--primary-accent); }
+
+        #canvasContainer {
+            position: relative;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 0 15px rgba(159, 85, 255, 0.1);
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #drawingBoard {
+            position: absolute;
+            width: 100000px;
+            height: 100000px;
+            background-color: #f0f4f8; 
+            transform-origin: 0 0;
+            left: 0;
+            top: 0;
+            will-change: transform;
+        }
+
+        .image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container {
+            position: absolute; border: 1px dashed transparent; cursor: grab; touch-action: none; z-index: 10; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .text-container { padding: 4px; user-select: text; text-shadow: none; color: black; }
+        .text-container.active { border-color: var(--success-color); box-shadow: 0 0 6px var(--success-color); }
+        .image-container img, .image-container svg, .component-container svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+        .image-container.active, .component-container.active, .drawing-container.active { border-color: var(--primary-accent); box-shadow: 0 0 6px var(--primary-accent); }
+        .line-container { background-color: black; height: 4px; transform-origin: left center; min-width: 10px; }
+        .line-container.active { box-shadow: 0 0 6px var(--warning-color); background-color: var(--warning-color); }
+        .drawing-container polyline { fill: none; stroke: black; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .resize-handle, .rotate-handle {
+            position: absolute; background: var(--primary-accent); border: 2px solid white; z-index: 100; opacity: 0; transition: opacity 0.2s, transform 0.2s; border-radius: 50%; box-shadow: 0 0 6px var(--primary-accent);
+        }
+        .resize-handle { width: 10px; height: 10px; }
+        .rotate-handle { width: 15px; height: 15px; top: -22px; left: 50%; transform: translateX(-50%); cursor: grab; }
+        *:not(.line-container).active > .resize-handle, *:not(.line-container).active > .rotate-handle { opacity: 1; }
+        .nw { top: -6px; left: -6px; cursor: nwse-resize; }
+        .ne { top: -6px; right: -6px; cursor: nesw-resize; }
+        .sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+        .se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+        .line-container.active .resize-handle { opacity: 1; background: var(--warning-color); }
+        .line-container .resize-handle.start-point { top: -4px; left: -5px; cursor: move; }
+        .line-container .resize-handle.end-point { top: -4px; right: -5px; cursor: ew-resize; }
+        
+        #toolbar {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            z-index: 20;
+            margin: 0 10px 10px;
+        }
+        .tool-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-medium);
+            font-size: 1em;
+        }
+        .tool-btn:hover, .tool-btn.active {
+            background: var(--primary-accent);
+            color: var(--text-dark);
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 10px var(--primary-accent);
+            transform: translateY(-2px);
+        }
+        .tool-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(128, 128, 128, 0.2) !important;
+            color: var(--text-medium) !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        #savePanel h3 {
+            margin-top: 0; color: var(--primary-accent); text-align: center; margin-bottom: 15px; font-size: 1.2em; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; text-shadow: 0 0 4px var(--primary-accent);
+        }
+
+        .saved-thumb {
+            margin-bottom: 15px; cursor: pointer; border: 1px solid var(--glass-border); padding: 12px; background: var(--glass-bg); user-select: none; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: all 0.2s;
+        }
+        .saved-thumb:hover {
+            box-shadow: 0 0 15px var(--primary-accent); transform: translateY(-3px); border-color: var(--primary-accent);
+        }
+        .saved-thumb img { width: 100%; height: auto; display: block; margin-top: 8px; border-radius: 6px; border: 1px solid var(--glass-border); }
+        .saved-thumb strong { color: var(--text-light); font-size: 1.05em; }
+
+        .save-btn {
+            position: absolute; bottom: 20px; right: 20px; z-index: 100; background: var(--success-color); color: #fff; padding: 12px 25px; border-radius: 50px; font-size: 1.1rem; box-shadow: 0 0 12px var(--success-color); border:none;
+        }
+        .save-btn:hover {
+            box-shadow: 0 0 20px var(--success-color); transform: translateY(-2px);
+        }
+
+        #zoomControls {
+            position: absolute; bottom: 20px; left: 20px; background: var(--glass-bg); backdrop-filter: blur(5px); padding: 8px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; z-index: 100; border: 1px solid var(--glass-border);
+        }
+        #zoomControls button {
+            width: 32px; height: 32px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-light); border-radius: 8px; font-weight: bold; font-size: 1.2em;
+        }
+        #zoomControls button:hover {
+            background-color: var(--primary-accent); border-color: var(--primary-accent); color: var(--text-dark); box-shadow: 0 0 8px var(--primary-accent);
+        }
+        #zoomSlider {
+            width: 120px; -webkit-appearance: none; appearance: none; height: 5px; background: var(--secondary-bg); border-radius: 5px; outline: none;
+        }
+        #zoomSlider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: var(--primary-accent); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px var(--primary-accent);
+        }
+        #zoomValue {
+            font-weight: bold; text-align: center; color: var(--text-light); min-width: 45px;
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(26, 26, 46, 0.6); backdrop-filter: blur(8px); justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--secondary-bg), var(--dark-bg)); padding: 30px; border: 1px solid var(--glass-border); border-radius: 16px; width: 320px; text-align: center; animation: scaleUp 0.3s ease-out; box-shadow: 0 0 20px rgba(159, 85, 255, 0.2);
+        }
+        .modal-content p {
+            margin-bottom: 20px; font-size: 1.1em; color: var(--text-light);
+        }
+        .modal-content button {
+            padding: 10px 15px; margin: 5px; min-width: 100px; color: var(--text-light); border: 1px solid var(--glass-border);
+        }
+        .modal-content .button-group {
+            display: flex; justify-content: center; gap: 10px;
+        }
+        .modal-content .button-group button.cancel { background-color: var(--neutral-color); }
+        .modal-content .button-group button.cancel:hover { background-color: #5a6268; box-shadow: 0 0 8px var(--neutral-color); }
+        .modal-content button.ok, .modal-content button.yes { background: var(--primary-accent-dark); color: var(--text-dark); border: none;}
+        .modal-content button.ok:hover, .modal-content button.yes:hover { background: var(--primary-accent); box-shadow: 0 0 8px var(--primary-accent); }
+        .modal-content button.apply-text {
+            background: var(--success-color);
+            color: var(--text-dark);
+            border: none;
+        }
+        .modal-content button.apply-text:hover {
+            background: #16a085;
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        #customDrawingModal .modal-content {
+            width: 750px; 
+            max-width: 95vw;
+        }
+        #drawingCanvas {
+            border: 2px solid var(--glass-border); border-radius: 8px; cursor: crosshair; background: #fff;
+            flex-grow: 1; 
+            height: 400px; 
+        }
+        
+        #drawingControls, #drawingTextControls {
+            display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        #drawingTextControls select, #drawingTextControls input {
+            background-color: rgba(255,255,255,0.8);
+            color: var(--text-dark);
+            border: 1px solid #ccc;
+        }
+        
+        #canvas-and-tools-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        #rightSideTools {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* MODIFIED: Reduced gap for tighter button spacing */
+            flex-shrink: 0;
+        }
+        #rightSideTools .tool-btn {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+
+        #customShapeTools {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 50px;
+            align-items: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        #customShapeTools button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+        
+        #drawingClearBtn { background-color: var(--warning-color) !important; color: var(--text-dark) !important; border:none; }
+        #drawingClearBtn:hover { box-shadow: 0 0 8px var(--warning-color); background-color: #f1c40f !important; }
+
+        .task-container {
+            background: #ffffff; border: 1px solid #bdc3c7; border-radius: 8px; width: auto; min-width: 140px; padding: 8px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); transition: all 0.2s;
+            color: var(--text-dark); 
+        }
+        body.light-mode .task-container {
+             background: var(--secondary-bg);
+             border-color: var(--glass-border);
+             color: var(--text-light); 
+        }
+
+        .task-container:hover {
+            box-shadow: 0 8px 32px rgba(30, 41, 59, 0.16), 0 3px 8px rgba(0,0,0,0.08); transform: translateY(-2px) scale(1.03); z-index: 101;
+        }
+        .task-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-radius: 5px; }
+        .task-name { font-weight: bold; font-size: 14px; }
+        .task-progress-value { 
+            font-weight: bold; 
+            font-size: 14px; 
+            color: var(--neutral-color); 
+        }
+        .task-container.active { border: 1px dashed var(--danger-color); box-shadow: 0 0 8px var(--danger-color); }
+
+        .image-container.selected-for-join { box-shadow: 0 0 0 4px var(--danger-color); border-color: var(--danger-color); }
+        #lassoCanvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 100; }
+        .selected-by-lasso { box-shadow: 0 0 0 3px var(--primary-accent) !important; border-color: var(--primary-accent) !important; }
+        .task-container.highlighted, .image-container.highlighted { box-shadow: 0 0 0 3px var(--warning-color) !important; border: 1px solid var(--warning-color) !important; z-index: 102; }
+
+        .connection-handle {
+            position: absolute; width: 12px; height: 12px; background-color: var(--danger-color); border: 2px solid white; border-radius: 50%; cursor: move; z-index: 101; transform: translate(-50%, -50%); box-shadow: 0 0 8px var(--danger-color); transition: transform 0.2s;
+        }
+        .connection-handle:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="appWrapper" style="display:flex; height: 100vh; flex-direction: column;">
+        <header>
+            <h1>Circuit Designer</h1>
+            <div class="header-buttons">
+                <button onclick="toggleMode()" id="modeButton">Switch Mode</button>
+                <button onclick="toggleTheme()" id="themeButton">☀️ Light Mode</button>
+            </div>
+        </header>
+
+        <div id="app">
+             <button id="left-sidebar-toggle" class="sidebar-toggle">SVG</button>
+            <div id="sidebar">
+               <div class="upload-section">
+                <label for="svgUploader" class="custom-file-upload">Choose SVG Files</label>
+                <input type="file" id="svgUploader" accept=".svg" onchange="handleSvgUpload(event)" multiple style="display: none;" />
+                <div class="svg-dropbox empty" id="svgDropbox">
+                    Drag SVG file(s) here or use the button above.
+                </div>
+                <button id="customDrawBtn" class="custom-file-upload" style="margin-top: 10px; background: linear-gradient(90deg, #34d399 0%, #10b981 100%);">Custom</button>
+            </div>
+
+                <div class="component-tools" style="display: none;">
+                    </div>
+            </div>
+
+            <div id="main">
+                <div id="textControls">
+                    <input type="text" id="textInput" placeholder="Enter text..." />
+                    <select id="fontFamily">
+                        <option value="Arial">Arial</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                    </select>
+                    <input type="number" id="fontSize" value="16" min="8" max="72" />
+                    <input type="color" id="textColor" value="#000000" />
+                    <button onclick="addTextToCanvas()">Add Text</button>
+                </div>
+                <div id="lineControls" style="display: none;">
+                    <label for="lineWidth">Line Width:</label>
+                    <input type="number" id="lineWidth" value="2" min="1" max="10" />
+                </div>
+
+                <div id="canvasContainer">
+                    <div id="drawingBoard">
+                    </div>
+                    <canvas id="lassoCanvas"></canvas>
+                </div>
+                <button class="save-btn" onclick="saveCanvas()" title="Save Drawing">💾 Save</button>
+
+                <div id="zoomControls">
+                    <button id="zoomOutBtn" title="Zoom Out">-</button>
+                    <input type="range" id="zoomSlider" min="0.1" max="3" step="0.01" value="1" title="Zoom">
+                    <button id="zoomInBtn" title="Zoom In">+</button>
+                    <span id="zoomValue">100%</span>
+                    <button id="resetViewBtn" title="Reset View">⌖</button>
+                </div>
+            </div>
+
+            <div id="savePanel">
+                <h3>Saved Pages</h3>
+                <div id="savedList"></div>
+            </div>
+            <button id="right-sidebar-toggle" class="sidebar-toggle">Saved</button>
+        </div>
+
+        <div id="toolbar">
+            <button class="tool-btn" id="selectToolBtn" title="Select & Pan (V)">👆 Select</button>
+            <button class="tool-btn" id="lassoToolBtn" title="Lasso Select (L)">🤸 Lasso</button>
+            <button class="tool-btn" id="lineToolBtn" title="Draw Straight Line (S)">📏 Line</button>
+            <button class="tool-btn" id="textToggleBtn" title="Add Text (T)">📝 Text</button>
+            <button class="tool-btn" id="task" title="Manage Tasks">☰ Task</button>
+            <button class="tool-btn" id="joinBtn" title="Join Elements (J)">🔗 Join</button>
+            <button class="tool-btn" onclick="clearBoard()" title="Clear Entire Board">🧹 Clear All</button>
+            <button class="tool-btn" onclick="clearSelectedElements()" title="Delete Selected (Delete/Backspace)">🗑️ Delete</button>
+        </div>
+    </div>
+
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content">
+            <p id="customAlertMessage"></p>
+            <button class="ok" onclick="document.getElementById('customAlertModal').style.display='none';">OK</button>
+        </div>
+    </div>
+    <div id="customConfirmModal" class="modal">
+        <div class="modal-content">
+            <p id="customConfirmMessage"></p>
+            <div class="button-group">
+                <button id="confirmYesBtn" class="yes">Yes</button>
+                <button id="confirmNoBtn" class="cancel">No</button>
+            </div>
+        </div>
+    </div>
+    <div id="customPromptModal" class="modal">
+        <div class="modal-content">
+            <p id="customPromptMessage"></p>
+            <input type="text" id="customPromptInput" />
+            <div class="button-group">
+                <button id="promptOkBtn" class="ok">OK</button>
+                <button id="promptCancelBtn" class="cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div id="lineWidthModal" class="modal">
+        <div class="modal-content">
+            <p>Select Line Width (1-10):</p>
+            <div id="lineWidthOptions" class="button-group"></div>
+        </div>
+    </div>
+    
+    <div id="customDrawingModal" class="modal">
+        <div class="modal-content">
+            <p>Custom SVG</p>
+
+            <div id="customShapeTools">
+                <button id="drawFreehandBtn" class="tool-btn active">Freehand</button>
+                <button id="drawLineBtn" class="tool-btn">Line</button>
+                <button id="drawSquareBtn" class="tool-btn">Square</button>
+                <button id="drawCircleBtn" class="tool-btn">Circle</button>
+                <button id="drawTextBtn" class="tool-btn">Text</button>
+            </div>
+
+            <div id="drawingTextControls" style="display: none;">
+                <label for="drawingFontFamily">Font:</label>
+                <select id="drawingFontFamily">
+                    <option value="Arial">Arial</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Verdana">Verdana</option>
+                </select>
+                <label for="drawingFontSize">Size:</label>
+                <input type="number" id="drawingFontSize" value="16" min="8" max="72" />
+            </div>
+            
+            <div id="canvas-and-tools-wrapper">
+                <canvas id="drawingCanvas" width="600" height="400"></canvas>
+                
+                <div id="rightSideTools">
+                    <button id="drawArrowBtn" class="tool-btn">Arrow</button>
+                    <button id="drawChevronLeftBtn" class="tool-btn">&lt;</button>
+                    <button id="drawChevronRightBtn" class="tool-btn">&gt;</button>
+                    <button id="drawEraseBtn" class="tool-btn">Erase</button>
+                    <button id="drawSelectBtn" class="tool-btn">Select</button>
+                </div>
+            </div>
+            
+            <div id="drawingControls">
+                <label for="brushColor">Color:</label>
+                <input type="color" id="brushColor" value="#000000">
+                <label for="brushSize">Brush/Line Size:</label>
+                <input type="range" id="brushSize" min="1" max="50" value="5">
+            </div>
+
+            <div class="button-group">
+                <button id="drawingClearBtn" class="cancel">Clear</button>
+                <button id="drawingCancelBtn" class="cancel">Cancel</button>
+                <button id="drawingDoneBtn" class="ok">Done</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="./tasks.js"></script>
+    <script src="./grid.js"></script>
+    <script src="./custom-tools.js"></script>
+    <script>
+        // Main application script remains here...
+        // No changes needed in this inline script block for this request.
+      class JoinManager {
+            constructor(board, container, saveFn, scaleFn, screenToVirtualFn) {
+                this.board = board;
+                this.container = container;
+                this.saveState = saveFn;
+                this.getScale = scaleFn;
+                this.screenToVirtual = screenToVirtualFn;
+
+                this.connections = [];
+                this.activeConnections = [];
+                this.joinMode = false;
+                this.firstElement = null;
+                this.joinCanvas = null;
+                this.isDraggingHandle = false;
+
+                this.joinBtn = document.getElementById('joinBtn');
+                this.joinBtn.addEventListener('click', () => this.toggleJoinMode());
+                this.board.addEventListener('click', (e) => this.handleBoardClick(e));
+
+                this.handlesContainer = document.createElement('div');
+                this.handlesContainer.style.position = 'absolute';
+                this.handlesContainer.style.top = '0';
+                this.handlesContainer.style.left = '0';
+                this.handlesContainer.style.width = '100%';
+                this.handlesContainer.style.height = '100%';
+                this.handlesContainer.style.pointerEvents = 'none';
+                this.handlesContainer.style.zIndex = '50';
+                this.container.appendChild(this.handlesContainer);
+            }
+
+            toggleJoinMode() {
+                this.joinMode = !this.joinMode;
+                if (this.joinMode) {
+                    this.joinBtn.classList.add('active');
+                    this.joinBtn.innerText = '🔗 Stop Joining';
+                    this.firstElement = null;
+                    if (!this.joinCanvas) this.createJoinCanvas();
+                    this.deactivateAllConnections();
+                    showCustomAlert('Join Mode Activated: Select the first element.');
+                } else {
+                    this.joinBtn.classList.remove('active');
+                    this.joinBtn.innerText = '🔗 Join';
+                    if (this.firstElement) {
+                        this.firstElement.classList.remove('selected-for-join');
+                        this.firstElement = null;
+                    }
+                }
+            }
+
+            createJoinCanvas() {
+                this.joinCanvas = document.createElement('canvas');
+                this.joinCanvas.style.position = 'absolute';
+                this.joinCanvas.style.top = '0';
+                this.joinCanvas.style.left = '0';
+                this.joinCanvas.style.pointerEvents = 'none';
+                this.joinCanvas.style.zIndex = '99';
+                this.container.appendChild(this.joinCanvas);
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            resizeCanvas() {
+                if (!this.joinCanvas) return;
+                this.joinCanvas.width = this.container.offsetWidth;
+                this.joinCanvas.height = this.container.offsetHeight;
+                this.drawAllConnections();
+            }
+
+            handleBoardClick(e) {
+                if (!this.joinMode) return;
+                const target = e.target.closest('.image-container, .text-container, .line-container, .component-container, .drawing-container');
+                if (!target) return;
+
+                if (!this.firstElement) {
+                    this.firstElement = target;
+                    this.firstElement.classList.add('selected-for-join');
+                    showCustomAlert('First element selected. Now select the second element to join.');
+                } else {
+                    if (this.firstElement === target) return;
+                    const secondElement = target;
+                    this.createConnection(this.firstElement.dataset.id, secondElement.dataset.id);
+                    this.firstElement.classList.remove('selected-for-join');
+                    this.firstElement = null;
+                    this.saveState();
+                    showCustomAlert('Elements joined! Select another element to start a new join.');
+                }
+            }
+
+            createConnection(id1, id2, fromPoint = { x: 1, y: 0.5 }, toPoint = { x: 0, y: 0.5 }) {
+                const exists = this.connections.some(conn => (conn.from === id1 && conn.to === id2) || (conn.from === id2 && conn.to === id1));
+                if (!exists) {
+                    this.connections.push({
+                        from: id1,
+                        to: id2,
+                        fromPoint: fromPoint,
+                        toPoint: toPoint
+                    });
+                    this.drawAllConnections();
+                }
+            }
+
+            getElementAttachPoint(elementId, relativePoint) {
+                const element = this.board.querySelector(`[data-id='${elementId}']`);
+                if (!element || !relativePoint) return null;
+
+                const left = parseFloat(element.style.left);
+                const top = parseFloat(element.style.top);
+                const width = parseFloat(element.style.width);
+                const height = parseFloat(element.style.height);
+
+                return { x: left + (width * relativePoint.x), y: top + (height * relativePoint.y) };
+            }
+
+            drawConnectionLine(conn, ctx) {
+                const fromPt = this.getElementAttachPoint(conn.from, conn.fromPoint);
+                const toPt = this.getElementAttachPoint(conn.to, conn.toPoint);
+                if (!fromPt || !toPt) return;
+
+                const x1 = fromPt.x;
+                const y1 = fromPt.y;
+                const x2 = toPt.x;
+                const y2 = toPt.y;
+                
+                const midX = (x1 + x2) / 2;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(midX, y1);
+                ctx.lineTo(midX, y2);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            drawAllConnections() {
+                if (!this.joinCanvas) return;
+                
+                const ctx = this.joinCanvas.getContext('2d');
+                ctx.clearRect(0, 0, this.joinCanvas.width, this.joinCanvas.height);
+
+                ctx.save();
+                ctx.translate(panX, panY);
+                ctx.scale(scale, scale);
+
+                ctx.lineJoin = 'round';
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1.5 / scale;
+
+                this.connections.forEach(conn => {
+                    this.drawConnectionLine(conn, ctx);
+                });
+                ctx.restore();
+                this.renderActiveHandles();
+            }
+
+            loadConnections(connectionsData) {
+                this.connections = connectionsData || [];
+                if (!this.joinCanvas && this.connections.length > 0) this.createJoinCanvas();
+                this.drawAllConnections();
+            }
+
+            clearAll() {
+                this.connections = [];
+                if (this.joinCanvas) {
+                    const ctx = this.joinCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, this.joinCanvas.width, this.joinCanvas.height);
+                }
+                this.deactivateAllConnections();
+            }
+
+            activateConnectionsForElement(elementId) {
+                this.activeConnections = this.connections.filter(c => c.from === elementId || c.to === elementId);
+                this.drawAllConnections();
+            }
+
+            deactivateAllConnections() {
+                this.activeConnections = [];
+                this.drawAllConnections();
+            }
+
+            renderActiveHandles() {
+                this.handlesContainer.innerHTML = '';
+                if (this.joinMode) return;
+
+                this.activeConnections.forEach(conn => {
+                    const fromPt = this.getElementAttachPoint(conn.from, conn.fromPoint);
+                    const toPt = this.getElementAttachPoint(conn.to, conn.toPoint);
+
+                    if (fromPt) {
+                        const handleFrom = this.createHandle(conn, 'from');
+                        handleFrom.style.left = `${fromPt.x * scale + panX}px`;
+                        handleFrom.style.top = `${fromPt.y * scale + panY}px`;
+                        this.handlesContainer.appendChild(handleFrom);
+                    }
+                    if (toPt) {
+                        const handleTo = this.createHandle(conn, 'to');
+                        handleTo.style.left = `${toPt.x * scale + panX}px`;
+                        handleTo.style.top = `${toPt.y * scale + panY}px`;
+                        this.handlesContainer.appendChild(handleTo);
+                    }
+                });
+            }
+
+            createHandle(connection, type) {
+                const handle = document.createElement('div');
+                handle.className = 'connection-handle';
+                handle.style.pointerEvents = 'all';
+                handle.addEventListener('mousedown', (e) => this.startHandleDrag(e, connection, type));
+                return handle;
+            }
+
+            startHandleDrag(e, connection, type) {
+                e.stopPropagation();
+                this.isDraggingHandle = true;
+                
+                const elementId = (type === 'from') ? connection.from : connection.to;
+                const element = this.board.querySelector(`[data-id='${elementId}']`);
+                if (!element) return;
+
+                const onMouseMove = (moveEvent) => {
+                    const virtualCoords = this.screenToVirtual(moveEvent.clientX, moveEvent.clientY);
+                    
+                    const elLeft = parseFloat(element.style.left);
+                    const elTop = parseFloat(element.style.top);
+                    const elWidth = parseFloat(element.style.width);
+                    const elHeight = parseFloat(element.style.height);
+
+                    let relativeX = (virtualCoords.x - elLeft) / elWidth;
+                    let relativeY = (virtualCoords.y - elTop) / elHeight;
+                    relativeX = Math.max(0, Math.min(1, relativeX));
+                    relativeY = Math.max(0, Math.min(1, relativeY));
+
+                    const newPoint = { x: relativeX, y: relativeY };
+
+                    if (type === 'from') {
+                        connection.fromPoint = newPoint;
+                    } else {
+                        connection.toPoint = newPoint;
+                    }
+                    this.drawAllConnections();
+                };
+
+                const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    this.isDraggingHandle = false;
+                    this.saveState();
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp, { once: true });
+            }
+        }   
+                
+        let currentAppMode = 'server';
+        let loggedInAsMode = 'server';
+        let loggedInUsername = 'defaultUser';
+        let currentDrawingId = 'current';
+
+        let textModeEnabled = false;
+        let lineModeEnabled = false;
+        let lassoModeEnabled = false;
+        let isLassoing = false;
+        let lassoPath = [];
+        
+        let lineStartPoint = null;
+        let placingComponentType = null;
+        
+        const appContainer = document.getElementById('app');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const drawingBoard = document.getElementById('drawingBoard');
+        const sidebar = document.getElementById('sidebar');
+        const savePanel = document.getElementById('savePanel');
+        const toolbar = document.getElementById('toolbar');
+        const textControls = document.getElementById('textControls');
+        const saveBtn = document.querySelector('.save-btn');
+        const modeButton = document.getElementById('modeButton');
+        const savedList = document.getElementById('savedList');
+
+        const selectToolBtn = document.getElementById('selectToolBtn');
+        const lassoToolBtn = document.getElementById('lassoToolBtn');
+        const textToggleBtn = document.getElementById('textToggleBtn');
+        const joinBtn = document.getElementById('joinBtn'); 
+
+        const svgDropbox = document.getElementById('svgDropbox');
+
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValueSpan = document.getElementById('zoomValue');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        const zoomControls = document.getElementById('zoomControls');
+
+        const lassoCanvas = document.getElementById('lassoCanvas');
+        const lassoCtx = lassoCanvas.getContext('2d');
+
+        const customAlertModal = document.getElementById('customAlertModal');
+        const customAlertMessage = document.getElementById('customAlertMessage');
+        const customConfirmModal = document.getElementById('customConfirmModal');
+        const customConfirmMessage = document.getElementById('customConfirmMessage');
+        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmNoBtn = document.getElementById('confirmNoBtn');
+        const customPromptModal = document.getElementById('customPromptModal');
+        const customPromptMessage = document.getElementById('customPromptMessage');
+        const customPromptInput = document.getElementById('customPromptInput');
+        const promptOkBtn = document.getElementById('promptOkBtn');
+        const promptCancelBtn = document.getElementById('promptCancelBtn');
+
+        let savedDrawingsData = [];
+        let uploadedSvgs = JSON.parse(localStorage.getItem('uploadedSvgs')) || [];
+
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let lastPanX, lastPanY;
+        let lastMousePos = { x: 200, y: 200 }; 
+
+        
+       const joinManager = new JoinManager(drawingBoard, canvasContainer, saveDrawingState, () => scale, screenToVirtual);
+       let gridManager;
+
+        let elementCounter = 0;
+        let activeElement = null;
+        let selectedElements = new Set();
+        let clipboard = null;
+        let isDragging = false;
+        let isResizing = false;
+        let isRotating = false;
+        let startX, startY, initialLeft, initialTop, initialWidth, initialHeight, initialRotation;
+        let resizeHandleType = '';
+
+        let draggedSvg = null;
+        let elementsBeingDragged = new Set();
+
+        let currentLineWidth = 2;
+        let activeLineElement = null;
+
+        const lineControls = document.getElementById('lineControls');
+        const lineWidthInput = document.getElementById('lineWidth');
+        const lineToolBtn = document.getElementById('lineToolBtn');
+        const lineWidthModal = document.getElementById('lineWidthModal');
+        const lineWidthOptions = document.getElementById('lineWidthOptions');
+
+        let lastMouseEvent = null;
+        let isUpdateFramePending = false;
+
+
+        function showCustomAlert(message) {
+            customAlertMessage.innerText = message;
+            customAlertModal.style.display = 'flex';
+        }
+
+        function showCustomConfirm(message, onConfirmCallback) {
+            customConfirmMessage.innerText = message;
+            customConfirmModal.style.display = 'flex';
+
+            const handleConfirm = () => {
+                onConfirmCallback(true);
+                customConfirmModal.style.display = 'none';
+            };
+
+            const handleCancel = () => {
+                onConfirmCallback(false);
+                customConfirmModal.style.display = 'none';
+            };
+
+            confirmYesBtn.onclick = handleConfirm;
+            confirmNoBtn.onclick = handleCancel;
+        }
+
+        function showCustomPrompt(message, onConfirmCallback, defaultValue = '') {
+            customPromptMessage.innerText = message;
+            customPromptInput.value = defaultValue;
+            customPromptModal.style.display = 'flex';
+            customPromptInput.focus();
+
+            const handleOk = () => {
+                onConfirmCallback(customPromptInput.value);
+                customPromptModal.style.display = 'none';
+            };
+
+            const handleCancel = () => {
+                onConfirmCallback(null);
+                customPromptModal.style.display = 'none';
+            };
+
+            promptOkBtn.onclick = handleOk;
+            promptCancelBtn.onclick = handleCancel;
+            
+            customPromptInput.onkeypress = (e) => {
+                if (e.key === 'Enter') handleOk();
+            };
+        }
+
+        function screenToVirtual(screenX, screenY) {
+            const containerRect = canvasContainer.getBoundingClientRect();
+            const virtualX = (screenX - containerRect.left - panX) / scale;
+            const virtualY = (screenY - containerRect.top - panY) / scale;
+            return { x: virtualX, y: virtualY };
+        }
+
+        function virtualToScreen(virtualX, virtualY) {
+            const containerRect = canvasContainer.getBoundingClientRect();
+            const screenX = virtualX * scale + panX + containerRect.left;
+            const screenY = virtualY * scale + panY + containerRect.top;
+            return { x: screenX, y: screenY };
+        }
+
+        function applyBoardTransform() {
+            drawingBoard.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            drawingBoard.querySelectorAll('.drawing-container polyline').forEach(polyline => {
+                polyline.style.strokeWidth = `${2 / scale}px`;
+            });
+            if (gridManager) gridManager.drawGrid();
+            joinManager.drawAllConnections();
+        }
+
+        function zoom(newScale, centerX, centerY) {
+
+            const virtualPoint = screenToVirtual(centerX, centerY);
+            
+            scale = Math.max(0.1, Math.min(3, newScale));
+
+            panX = centerX - (virtualPoint.x * scale) - canvasContainer.getBoundingClientRect().left;
+            panY = centerY - (virtualPoint.y * scale) - canvasContainer.getBoundingClientRect().top;
+            
+            applyBoardTransform();
+            updateZoomDisplay();
+            saveDrawingState();
+        }
+
+        function updateZoomDisplay() {
+            zoomSlider.value = scale;
+            zoomValueSpan.innerText = `${Math.round(scale * 100)}%`;
+        }
+
+        function resetView() {
+            
+            const boardWidth = drawingBoard.offsetWidth;
+            const boardHeight = drawingBoard.offsetHeight;
+            const containerRect = canvasContainer.getBoundingClientRect();
+            
+            scale = 1;
+            panX = (containerRect.width / 2) - (boardWidth / 2) * scale;
+            panY = (containerRect.height / 2) - (boardHeight / 2) * scale;
+
+            applyBoardTransform();
+            updateZoomDisplay();
+            saveDrawingState();
+        }
+
+        zoomInBtn.addEventListener('click', () => { 
+                const containerRect = canvasContainer.getBoundingClientRect();
+                zoom(scale + 0.1, containerRect.left + containerRect.width / 2, containerRect.top + containerRect.height / 2);
+            }
+        );
+        zoomOutBtn.addEventListener('click', () => {
+            
+                const containerRect = canvasContainer.getBoundingClientRect();
+                zoom(scale - 0.1, containerRect.left + containerRect.width / 2, containerRect.top + containerRect.height / 2);
+            }
+        );
+        zoomSlider.addEventListener('input', (e) => {
+            
+                const newScale = parseFloat(e.target.value);
+                const containerRect = canvasContainer.getBoundingClientRect();
+                zoom(newScale, containerRect.left + containerRect.width / 2, containerRect.top + containerRect.height / 2);
+            }
+        );
+        resetViewBtn.addEventListener('click', resetView);
+
+        canvasContainer.addEventListener('wheel', (e) => {
+            {
+                e.preventDefault();
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+                const zoomAmount = e.deltaY * -0.001;
+                zoom(scale + zoomAmount, mouseX, mouseY);
+            }
+        });
+
+        function deactivateAllTools() {
+            if (joinManager.joinMode) joinManager.toggleJoinMode();
+            if(window.taskManager && window.taskManager.taskMode) window.taskManager.toggleTaskMode();
+            disableTextMode();
+            disableLineMode();
+            disableLassoMode();
+            placingComponentType = null;
+            updateToolButtons(selectToolBtn); 
+            canvasContainer.style.cursor = 'grab'; 
+        }
+
+        function disableTextMode() {
+            textModeEnabled = false;
+            textControls.style.display = 'none';
+            textToggleBtn.classList.remove('active');
+        }
+
+        function disableLineMode() {
+            lineModeEnabled = false;
+            lineToolBtn.classList.remove('active');
+            lineStartPoint = null;
+        }
+
+        function disableLassoMode() {
+            lassoModeEnabled = false;
+            lassoToolBtn.classList.remove('active');
+            isLassoing = false;
+            lassoPath = [];
+        }
+
+        function updateToolButtons(selectedButton) {
+            const buttons = [selectToolBtn, lassoToolBtn, textToggleBtn, lineToolBtn, joinBtn, document.getElementById('task')];
+            buttons.forEach(btn => {
+                if(btn) btn.classList.remove('active');
+            });
+            if (selectedButton) {
+                selectedButton.classList.add('active');
+            }
+        }
+
+        function getRotationFromElement(element) {
+            const transform = getComputedStyle(element).transform;
+            if (transform && transform !== 'none') {
+                const values = transform.split('(')[1].split(')')[0].split(',');
+                const a = values[0];
+                const b = values[1];
+                let angle = Math.round(Math.atan2(b, a) * (180/Math.PI));
+                return (angle < 0) ? angle + 360 : angle;
+            }
+            return 0;
+        }
+
+        function enableTextMode() {
+            if (currentAppMode !== 'server') return;
+            if (textModeEnabled) {
+                deactivateAllTools();
+                return;
+            }
+            deactivateAllTools();
+            activateElement(null);
+            textModeEnabled = true;
+            textControls.style.display = 'flex';
+            updateToolButtons(textToggleBtn);
+            canvasContainer.style.cursor = 'text';
+            document.getElementById('textInput').value = 'New Text';
+            document.getElementById('fontFamily').value = 'Arial';
+            document.getElementById('fontSize').value = '16';
+            document.getElementById('textColor').value = '#000000';
+        }
+
+        function enableLineMode() {
+            if (currentAppMode !== 'server') return;
+            if (lineModeEnabled) {
+                deactivateAllTools();
+                return;
+            }
+            deactivateAllTools();
+            activateElement(null);
+            lineModeEnabled = true;
+            updateToolButtons(lineToolBtn);
+            canvasContainer.style.cursor = 'crosshair';
+        }
+
+        function enableLassoMode() {
+            if (currentAppMode !== 'server') return;
+            if (lassoModeEnabled) {
+                deactivateAllTools();
+                return;
+            }
+            deactivateAllTools();
+            activateElement(null);
+            lassoModeEnabled = true;
+            updateToolButtons(lassoToolBtn);
+            canvasContainer.style.cursor = 'crosshair';
+        }
+
+       function startDrag(e, element) {
+            if (currentAppMode === 'client') {
+                if (!element && selectToolBtn.classList.contains('active')) {
+                    isPanning = true;
+                    lastPanX = e.clientX;
+                    lastPanY = e.clientY;
+                    canvasContainer.style.cursor = 'grabbing';
+                }
+                return;
+            }
+
+            if (selectToolBtn.classList.contains('active') && !element) {
+                isPanning = true;
+                lastPanX = e.clientX;
+                lastPanY = e.clientY;
+                canvasContainer.style.cursor = 'grabbing';
+                return;
+            }
+            
+            if (element) {
+                isDragging = true;
+                elementsBeingDragged.clear();
+                const virtualCoords = screenToVirtual(e.clientX, e.clientY);
+
+                const elementsToDrag = selectedElements.has(element) ? selectedElements : new Set([element]);
+
+                elementsToDrag.forEach(el => {
+                    elementsBeingDragged.add(el);
+                    el.dataset.startX = virtualCoords.x;
+                    el.dataset.startY = virtualCoords.y;
+                    el.dataset.initialLeft = parseFloat(el.style.left || 0);
+                    el.dataset.initialTop = parseFloat(el.style.top || 0);
+                    el.style.cursor = 'grabbing';
+                    el.style.zIndex = ++elementCounter;
+                });
+            }
+        }
+
+        function startResize(e, element, handleType) {
+            if (currentAppMode !== 'server') return;
+            e.stopPropagation();
+            isResizing = true;
+            resizeHandleType = handleType;
+
+            const virtualCoords = screenToVirtual(e.clientX, e.clientY);
+            startX = virtualCoords.x;
+            startY = virtualCoords.y;
+
+            initialWidth = parseFloat(element.style.width || element.offsetWidth);
+            initialHeight = parseFloat(element.style.height || element.offsetHeight);
+            initialLeft = parseFloat(element.style.left || 0);
+            initialTop = parseFloat(element.style.top || 0);
+
+            if (element.dataset.type === 'line') {
+                const rotation = getRotationFromElement(element);
+                element.dataset.initialLineAngle = rotation;
+                element.dataset.initialLineLength = initialWidth;
+                
+                const lineOriginX = parseFloat(element.style.left);
+                const lineOriginY = parseFloat(element.style.top) + (element.offsetHeight / 2);
+
+                if (handleType === 'end-point') {
+                    element.dataset.lineFixedPointX = lineOriginX;
+                    element.dataset.lineFixedPointY = lineOriginY;
+                } else if (handleType === 'start-point') {
+                    const initialLineEndX = lineOriginX + initialWidth * Math.cos(rotation * Math.PI / 180);
+                    const initialLineEndY = lineOriginY + initialWidth * Math.sin(rotation * Math.PI / 180);
+                    element.dataset.lineFixedPointX = initialLineEndX;
+                    element.dataset.lineFixedPointY = initialLineEndY;
+                }
+            }
+        }        
+
+        function startRotate(e, element) {
+            if (currentAppMode !== 'server') return;
+            e.stopPropagation(); 
+            isRotating = true;
+            const virtualCoords = screenToVirtual(e.clientX, e.clientY);
+            startX = virtualCoords.x;
+            startY = virtualCoords.y;
+            initialRotation = getRotationFromElement(element);
+
+            const elementVirtualLeft = parseFloat(element.style.left || 0);
+            const elementVirtualTop = parseFloat(element.style.top || 0);
+            const elementVirtualWidth = parseFloat(element.style.width || element.offsetWidth);
+            const elementVirtualHeight = parseFloat(element.style.height || element.offsetHeight);
+
+            let rotateOriginVirtualX, rotateOriginVirtualY;
+
+            if (element.dataset.type === 'line') {
+                rotateOriginVirtualX = elementVirtualLeft;
+                rotateOriginVirtualY = elementVirtualTop + elementVirtualHeight / 2;
+            } else {
+                rotateOriginVirtualX = elementVirtualLeft + elementVirtualWidth / 2;
+                rotateOriginVirtualY = elementVirtualTop + elementVirtualHeight / 2;
+            }
+
+            element.dataset.rotateOriginVirtualX = rotateOriginVirtualX;
+            element.dataset.rotateOriginVirtualY = rotateOriginVirtualY;
+            element.dataset.initialMouseAngle = Math.atan2(startY - rotateOriginVirtualY, startX - rotateOriginVirtualX);
+        }
+
+        function updateOnMouseMove(e) {
+            if (currentAppMode !== 'server' && !isPanning) return;
+            if (joinManager.isDraggingHandle) return;
+
+            if (isLassoing) {
+                const rect = canvasContainer.getBoundingClientRect();
+                const newX = e.clientX - rect.left;
+                const newY = e.clientY - rect.top;
+                lassoPath.push({x: newX, y: newY});
+                lassoCtx.lineTo(newX, newY);
+                lassoCtx.stroke();
+                return;
+            }
+            if (isPanning) {
+                const dx = e.clientX - lastPanX;
+                const dy = e.clientY - lastPanY;
+                panX += dx;
+                panY += dy;
+
+                applyBoardTransform();
+                lastPanX = e.clientX;
+                lastPanY = e.clientY;
+
+                expandCanvasIfNearEdge();
+                return;
+            }
+
+            if (isDragging) {
+                const currentVirtualCoords = screenToVirtual(e.clientX, e.clientY);
+                
+                elementsBeingDragged.forEach(el => {
+                    const dx = currentVirtualCoords.x - parseFloat(el.dataset.startX);
+                    const dy = currentVirtualCoords.y - parseFloat(el.dataset.startY);
+                    let newLeft = parseFloat(el.dataset.initialLeft) + dx;
+                    let newTop = parseFloat(el.dataset.initialTop) + dy;
+                    
+                    if (gridManager && gridManager.snapEnabled) {
+                        el.style.left = `${gridManager.snapValue(newLeft)}px`;
+                        el.style.top = `${gridManager.snapValue(newTop)}px`;
+                    } else {
+                        el.style.left = `${newLeft}px`;
+                        el.style.top = `${newTop}px`;
+                    }
+                });
+                joinManager.drawAllConnections();
+
+            } else if (isResizing && activeElement) {
+                const currentVirtualCoords = screenToVirtual(e.clientX, e.clientY);
+                const dx = currentVirtualCoords.x - startX;
+                const dy = currentVirtualCoords.y - startY;
+
+                let newWidth = initialWidth;
+                let newHeight = initialHeight;
+                let newLeft = initialLeft;
+                let newTop = initialTop;
+
+                if (activeElement.dataset.type === 'line') {
+                    if (resizeHandleType === 'end-point') {
+                        const lineStartX = parseFloat(activeElement.style.left);
+                        const lineStartY = parseFloat(activeElement.style.top) + (activeElement.offsetHeight / 2);
+
+                        const length = Math.sqrt(
+                            Math.pow(currentVirtualCoords.x - lineStartX, 2) +
+                            Math.pow(currentVirtualCoords.y - lineStartY, 2)
+                        );
+                        newWidth = Math.max(10, length);
+                        activeElement.style.width = `${newWidth}px`;
+
+                        const currentAngleRad = Math.atan2(currentVirtualCoords.y - lineStartY, currentVirtualCoords.x - lineStartX);
+                        activeElement.style.transform = `rotate(${currentAngleRad * (180 / Math.PI)}deg)`;
+                    } else if (resizeHandleType === 'start-point') {
+                        const lineFixedPointX = parseFloat(activeElement.dataset.lineFixedPointX);
+                        const lineFixedPointY = parseFloat(activeElement.dataset.lineFixedPointY);
+                        
+                        const length = Math.sqrt(
+                            Math.pow(lineFixedPointX - currentVirtualCoords.x, 2) +
+                            Math.pow(lineFixedPointY - currentVirtualCoords.y, 2)
+                        );
+                        newWidth = Math.max(10, length);
+                        activeElement.style.width = `${newWidth}px`;
+
+                        const angleRad = Math.atan2(lineFixedPointY - currentVirtualCoords.y, lineFixedPointX - currentVirtualCoords.x);
+                        activeElement.style.transform = `rotate(${angleRad * (180 / Math.PI)}deg)`;
+
+                        activeElement.style.left = `${currentVirtualCoords.x}px`;
+                        activeElement.style.top = `${currentVirtualCoords.y - (activeElement.offsetHeight / 2)}px`;
+                    }
+                } else {
+                    switch (resizeHandleType) {
+                        case 'se':
+                            newWidth = initialWidth + dx;
+                            newHeight = initialHeight + dy;
+                            break;
+                        case 'sw':
+                            newWidth = initialWidth - dx;
+                            newHeight = initialHeight + dy;
+                            newLeft = initialLeft + dx;
+                            break;
+                        case 'ne':
+                            newWidth = initialWidth + dx;
+                            newHeight = initialHeight - dy;
+                            newTop = initialTop + dy;
+                            break;
+                        case 'nw':
+                            newWidth = initialWidth - dx;
+                            newHeight = initialHeight - dy;
+                            newLeft = initialLeft + dx;
+                            newTop = initialTop + dy;
+                            break;
+                    }
+                    const minSize = 10;
+                    if (newWidth < minSize) {
+                        newWidth = minSize;
+                        if (resizeHandleType === 'sw' || resizeHandleType === 'nw') newLeft = initialLeft + (initialWidth - minSize);
+                    }
+                    if (newHeight < minSize) {
+                        newHeight = minSize;
+                        if (resizeHandleType === 'ne' || resizeHandleType === 'nw') newTop = initialTop + (initialHeight - minSize);
+                    }
+
+                    activeElement.style.width = `${newWidth}px`;
+                    activeElement.style.height = `${newHeight}px`;
+                    activeElement.style.left = `${newLeft}px`;
+                    activeElement.style.top = `${newTop}px`;
+                    joinManager.drawAllConnections();
+
+                    if (activeElement.dataset.type === 'drawing') {
+                        const svg = activeElement.querySelector('svg');
+                        if (svg) {
+                            svg.setAttribute('width', newWidth);
+                            svg.setAttribute('height', newHeight);
+                        }
+                    }
+                }
+            } else if (isRotating && activeElement) {
+                const currentVirtualCoords = screenToVirtual(e.clientX, e.clientY);
+                const rotateOriginVirtualX = parseFloat(activeElement.dataset.rotateOriginVirtualX);
+                const rotateOriginVirtualY = parseFloat(activeElement.dataset.rotateOriginVirtualY);
+                const initialMouseAngle = parseFloat(activeElement.dataset.initialMouseAngle);
+
+                const currentAngle = Math.atan2(currentVirtualCoords.y - rotateOriginVirtualY, currentVirtualCoords.x - rotateOriginVirtualX);
+                const angleDelta = (currentAngle - initialMouseAngle) * (180 / Math.PI);
+                let newRotation = initialRotation + angleDelta;
+                activeElement.style.transform = `rotate(${newRotation}deg)`;
+                joinManager.drawAllConnections();
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            lastMouseEvent = e;
+            if (!isUpdateFramePending) {
+                isUpdateFramePending = true;
+                requestAnimationFrame(() => {
+                    isUpdateFramePending = false;
+                    updateOnMouseMove(lastMouseEvent);
+                });
+            }
+        });
+
+
+        function expandCanvasIfNearEdge() {
+            const buffer = 500;
+            const expansionAmount = 10000;
+            const board = drawingBoard;
+
+            const viewRect = canvasContainer.getBoundingClientRect();
+            const virtualViewTopLeft = screenToVirtual(viewRect.left, viewRect.top);
+            const virtualViewBottomRight = screenToVirtual(viewRect.right, viewRect.bottom);
+
+            let boardWidth = board.offsetWidth;
+            let boardHeight = board.offsetHeight;
+            let needsUpdate = false;
+
+            if (virtualViewBottomRight.x > boardWidth - buffer) {
+                board.style.width = `${boardWidth + expansionAmount}px`;
+                needsUpdate = true;
+            }
+
+            if (virtualViewBottomRight.y > boardHeight - buffer) {
+                board.style.height = `${boardHeight + expansionAmount}px`;
+                needsUpdate = true;
+            }
+
+            if (virtualViewTopLeft.x < buffer) {
+                board.style.width = `${boardWidth + expansionAmount}px`;
+                board.querySelectorAll('.image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container').forEach(el => {
+                    el.style.left = `${parseFloat(el.style.left) + expansionAmount}px`;
+                });
+                panX -= expansionAmount * scale;
+                needsUpdate = true;
+            }
+
+            if (virtualViewTopLeft.y < buffer) {
+                board.style.height = `${boardHeight + expansionAmount}px`;
+                board.querySelectorAll('.image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container').forEach(el => {
+                    el.style.top = `${parseFloat(el.style.top) + expansionAmount}px`;
+                });
+                panY -= expansionAmount * scale;
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                applyBoardTransform();
+                joinManager.resizeCanvas();
+            }
+        }
+
+        selectToolBtn.addEventListener('click', () => {
+            deactivateAllTools();
+        });
+        
+        lassoToolBtn.addEventListener('click', enableLassoMode);
+
+        textToggleBtn.addEventListener('click', enableTextMode);
+        lineToolBtn.addEventListener('click', enableLineMode);
+
+        function updateActiveTextElement() {
+            if (activeElement && activeElement.dataset.type === 'text') {
+                activeElement.innerText = document.getElementById('textInput').value;
+                activeElement.style.fontFamily = document.getElementById('fontFamily').value;
+                activeElement.style.fontSize = parseFloat(document.getElementById('fontSize').value) + 'px'; 
+                activeElement.style.color = document.getElementById('textColor').value;
+                saveDrawingState();
+            }
+        }
+
+        function createLineElement(x1, y1, x2, y2) {
+            const lineElement = document.createElement('div');
+            lineElement.className = 'line-container';
+            lineElement.dataset.type = 'line';
+            lineElement.dataset.id = `line-${Date.now()}`;
+
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angleRad = Math.atan2(y2 - y1, x2 - x1);
+
+            lineElement.style.width = `${Math.max(10, length)}px`;
+            lineElement.style.height = '6px';
+            lineElement.style.left = `${x1}px`;
+            lineElement.style.top = `${y1 - 3}px`;
+            lineElement.style.transform = `rotate(${angleRad * (180 / Math.PI)}deg)`;
+            lineElement.style.zIndex = ++elementCounter;
+
+            addHandles(lineElement);
+            drawingBoard.appendChild(lineElement);
+            activateElement(lineElement);
+            saveDrawingState();
+        }
+
+        function addTextToCanvas() {
+            if (currentAppMode !== 'server') return;
+            const textInput = document.getElementById('textInput');
+            const fontFamily = document.getElementById('fontFamily');
+            const fontSize = document.getElementById('fontSize');
+            const textColor = document.getElementById('textColor');
+
+            if (textInput.value.trim() === '') {
+                showCustomAlert('Please enter some text.');
+                return;
+            }
+
+            const textContainer = document.createElement('div');
+            textContainer.className = 'text-container';
+            textContainer.dataset.type = 'text';
+            textContainer.dataset.id = `text-${Date.now()}`;
+            
+            const containerRect = canvasContainer.getBoundingClientRect();
+            const centerX = containerRect.width / 2;
+            const centerY = containerRect.height / 2;
+            const virtualCenter = screenToVirtual(containerRect.left + centerX, containerRect.top + centerY);
+
+            textContainer.style.left = `${virtualCenter.x}px`;
+            textContainer.style.top = `${virtualCenter.y}px`;
+            textContainer.innerText = textInput.value;
+            textContainer.style.fontFamily = fontFamily.value;
+            textContainer.style.fontSize = `${fontSize.value}px`;
+            textContainer.style.color = textColor.value;
+            textContainer.style.zIndex = ++elementCounter;
+
+            drawingBoard.appendChild(textContainer);
+
+            addHandles(textContainer);
+            activateElement(textContainer);
+            saveDrawingState();
+            deactivateAllTools();
+        }
+
+        function clearLassoSelection() {
+            selectedElements.forEach(el => el.classList.remove('selected-by-lasso'));
+            selectedElements.clear();
+        }
+
+      function activateElement(element) {
+            if (!element || !selectedElements.has(element)) {
+                clearLassoSelection();
+            }
+
+            if (activeElement) {
+                activeElement.classList.remove('active');
+            }
+            
+            if (!element) {
+                joinManager.deactivateAllConnections();
+            }
+
+            activeElement = element;
+
+            if (activeElement) {
+                activeElement.classList.add('active');
+                joinManager.activateConnectionsForElement(activeElement.dataset.id);
+                
+                if (activeElement.dataset.type === 'text') {
+                    if (currentAppMode === 'server') {
+                        textControls.style.display = 'flex';
+                        document.getElementById('textInput').value = activeElement.innerText || '';
+                        document.getElementById('fontFamily').value = activeElement.style.fontFamily || 'Arial';
+                        document.getElementById('fontSize').value = parseFloat(activeElement.style.fontSize) || 16;
+                        document.getElementById('textColor').value = activeElement.style.color || '#000000';
+                    }
+                } else if (!textModeEnabled) { 
+                    disableTextMode();
+                }
+            } else {
+                disableTextMode();
+            }
+        }
+
+        function addHandles(element) {
+            element.querySelectorAll('.resize-handle, .rotate-handle').forEach(handle => handle.remove());
+
+            if (element.dataset.type !== 'task-container') {
+                let handles = ['nw', 'ne', 'sw', 'se'];
+                if (element.dataset.type === 'line') {
+                    handles = ['start-point', 'end-point'];
+                }
+                handles.forEach(type => {
+                    const handle = document.createElement('div');
+                    handle.className = `resize-handle ${type}`;
+                    handle.addEventListener('mousedown', (e) => startResize(e, element, type));
+                    element.appendChild(handle);
+                });
+            }
+
+            const rotateHandle = document.createElement('div');
+            rotateHandle.className = 'rotate-handle';
+            rotateHandle.addEventListener('mousedown', (e) => startRotate(e, element));
+            element.appendChild(rotateHandle);
+        }
+       
+      canvasContainer.addEventListener('mousedown', (e) => {
+            lastMousePos = screenToVirtual(e.clientX, e.clientY);
+            if (window.taskManager && window.taskManager.taskMode) return;
+            if (joinManager.isDraggingHandle) return;
+
+            if (lassoModeEnabled) {
+                isLassoing = true;
+                lassoPath = [];
+                clearLassoSelection();
+                if (activeElement) activateElement(null);
+
+                lassoCanvas.width = canvasContainer.clientWidth;
+                lassoCanvas.height = canvasContainer.clientHeight;
+                lassoCtx.clearRect(0, 0, lassoCanvas.width, lassoCanvas.height);
+                lassoCtx.strokeStyle = 'rgba(159, 85, 255, 0.8)';
+                lassoCtx.lineWidth = 2;
+                lassoCtx.setLineDash([5, 5]);
+
+                const rect = canvasContainer.getBoundingClientRect();
+                const startX = e.clientX - rect.left;
+                const startY = e.clientY - rect.top;
+
+                lassoPath.push({ x: startX, y: startY });
+                lassoCtx.beginPath();
+                lassoCtx.moveTo(startX, startY);
+                return;
+            }
+
+            const targetIsHandle = e.target.closest('.resize-handle') || e.target.closest('.rotate-handle');
+            if (targetIsHandle) return;
+
+            const targetIsElement = e.target.closest('.image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container');
+
+            if (lineModeEnabled) {
+                const virtualCoords = screenToVirtual(e.clientX, e.clientY);
+                if (!lineStartPoint) {
+                    lineStartPoint = virtualCoords;
+                } else {
+                    createLineElement(lineStartPoint.x, lineStartPoint.y, virtualCoords.x, virtualCoords.y);
+                    lineStartPoint = null;
+                    deactivateAllTools();
+                }
+            } else if (textModeEnabled) {
+                if (targetIsElement && targetIsElement.classList.contains('text-container')) {
+                    activateElement(targetIsElement);
+                    startDrag(e, targetIsElement);
+                } else {
+                    activateElement(null);
+                }
+            } else {
+                if (targetIsElement) {
+                    activateElement(targetIsElement);
+                    if (currentAppMode === 'server') {
+                        startDrag(e, targetIsElement);
+                    }
+                } else {
+                    activateElement(null);
+                    startDrag(e, null);
+                }
+            }
+        });
+           
+        document.addEventListener('mouseup', (e) => { 
+            if (isLassoing && currentAppMode === 'server') {
+                isLassoing = false;
+                lassoCtx.closePath();
+                lassoCtx.fillStyle = 'rgba(159, 85, 255, 0.1)';
+                lassoCtx.fill();
+                selectElementsInLasso();
+                deactivateAllTools();
+                setTimeout(() => {
+                    lassoCtx.clearRect(0, 0, lassoCanvas.width, lassoCanvas.height);
+                }, 300);
+            }
+
+            if (isDragging) {
+                isDragging = false;
+                elementsBeingDragged.clear();
+            }
+            if (isResizing) isResizing = false;
+            if (isRotating) isRotating = false;
+            if (isPanning) isPanning = false;
+
+            if(activeElement) activeElement.style.cursor = 'grab';
+            selectedElements.forEach(el => el.style.cursor = 'grab');
+            canvasContainer.style.cursor = 'grab';
+
+            saveDrawingState();
+        });
+        
+        drawingBoard.addEventListener('mouseleave', () => {
+            if (isDragging || isResizing || isRotating || isPanning) {
+                if (isDragging) {
+                    elementsBeingDragged.clear();
+                }
+                isDragging = false;
+                isResizing = false;
+                isRotating = false;
+                isPanning = false;
+                if (activeElement) activeElement.style.cursor = 'grab';
+                canvasContainer.style.cursor = 'grab';
+                saveDrawingState();
+            }
+        });
+
+        function handleSvgUpload(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                Array.from(files).forEach(file => {
+                    if (file.type === 'image/svg+xml') {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const svgContent = e.target.result;
+                            uploadedSvgs.push({ id: Date.now() + Math.random(), svg: svgContent });
+                            localStorage.setItem('uploadedSvgs', JSON.stringify(uploadedSvgs));
+                            renderUploadedSvgs();
+                        };
+                        reader.readAsText(file);
+                    } else {
+                        showCustomAlert(`File "${file.name}" is not a valid SVG.`);
+                    }
+                });
+            }
+        }
+
+
+        function renderUploadedSvgs() {
+            svgDropbox.innerHTML = '';
+            if (uploadedSvgs.length === 0) {
+                svgDropbox.classList.add('empty');
+                svgDropbox.innerText = 'Drag SVG file(s) here or use the button above.';
+            } else {
+                svgDropbox.classList.remove('empty');
+                uploadedSvgs.forEach((svgData, index) => {
+                    const thumbnail = document.createElement('div');
+                    thumbnail.className = 'uploaded-svg-thumbnail';
+                    thumbnail.innerHTML = svgData.svg;
+                    thumbnail.title = `SVG Component ${index + 1}`;
+                    thumbnail.draggable = true;
+                    thumbnail.dataset.svgId = svgData.id;
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerText = 'x';
+                    deleteBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7em; cursor: pointer; display: ' + (currentAppMode === 'server' ? 'block' : 'none');
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        showCustomConfirm('Are you sure you want to delete this SVG component?', (confirmed) => {
+                            if (confirmed) deleteUploadedSvg(svgData.id);
+                        });
+                    };
+                    thumbnail.appendChild(deleteBtn);
+
+                    thumbnail.addEventListener('dragstart', (e) => {
+                        draggedSvg = svgData.svg;
+                        e.dataTransfer.setData('text/plain', 'dragged-svg-component'); 
+                        e.dataTransfer.setDragImage(thumbnail, 40, 40);
+                    });
+                    svgDropbox.appendChild(thumbnail);
+                });
+            }
+        }
+
+        function deleteUploadedSvg(idToDelete) {
+            uploadedSvgs = uploadedSvgs.filter(svg => svg.id !== idToDelete);
+            localStorage.setItem('uploadedSvgs', JSON.stringify(uploadedSvgs));
+            renderUploadedSvgs();
+        }
+
+        drawingBoard.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        drawingBoard.addEventListener('dragleave', (e) => {
+        });
+
+        drawingBoard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedSvg) {
+                const virtualCoords = screenToVirtual(e.clientX, e.clientY);
+                addSvgToCanvas(draggedSvg, virtualCoords.x, virtualCoords.y);
+                draggedSvg = null;
+            }
+        });
+
+        function addSvgToCanvas(svgContent, x, y, width = 100, height = 100, rotation = 0) {
+            if (currentAppMode !== 'server') return;
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'image-container';
+            imgContainer.dataset.type = 'image';
+            const elementId = `image-${Date.now()}`;
+            imgContainer.dataset.id = elementId;
+            imgContainer.id = elementId; 
+            
+            imgContainer.innerHTML = svgContent;
+
+            const svg = imgContainer.querySelector('svg');
+            if (svg) {
+                svg.setAttribute('width', '100%');
+                svg.setAttribute('height', '100%');
+
+                if (!svg.getAttribute('viewBox')) {
+                    const svgWidth = svg.getAttribute('width') || width;
+                    const svgHeight = svg.getAttribute('height') || height;
+                    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+                }
+            }
+
+            imgContainer.style.left = `${x}px`;
+            imgContainer.style.top = `${y}px`;
+            imgContainer.style.width = `${width}px`;
+            imgContainer.style.height = `${height}px`;
+            imgContainer.style.transform = `rotate(${rotation}deg)`;
+            imgContainer.style.zIndex = ++elementCounter;
+
+            addHandles(imgContainer);
+            drawingBoard.appendChild(imgContainer);
+            activateElement(imgContainer);
+            saveDrawingState();
+        }
+       
+        function clearBoard(silent = false) {
+            const performClear = () => {
+                const customElements = drawingBoard.querySelectorAll('.image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container');
+                customElements.forEach(el => el.remove());
+                activateElement(null);
+                clearLassoSelection();
+                disableTextMode();
+                joinManager.clearAll();
+                currentDrawingId = 'current';
+                saveDrawingState();
+                if (!silent) {
+                    showCustomAlert("Drawing board cleared!");
+                }
+            };
+
+            if (silent) {
+                performClear();
+            } else {
+                showCustomConfirm("Are you sure you want to clear the entire drawing board?", (confirmed) => {
+                    if (confirmed) {
+                        performClear();
+                    }
+                });
+            }
+        }
+
+        function clearSelectedElements() {
+             const elementsToDelete = selectedElements.size > 0 ? Array.from(selectedElements) : (activeElement ? [activeElement] : []);
+             if (elementsToDelete.length === 0) {
+                showCustomAlert("No element selected to clear.");
+                return;
+            }
+
+            showCustomConfirm(`Are you sure you want to delete the selected ${elementsToDelete.length} element(s)?`, (confirmed) => {
+                if (!confirmed) return;
+
+                elementsToDelete.forEach(elementToDelete => {
+                    const elementId = elementToDelete.dataset.id;
+                    if (elementToDelete.dataset.type === 'image') {
+                        const linkedTasks = drawingBoard.querySelectorAll(`.task-container[data-linked-element-id="${elementId}"]`);
+                        linkedTasks.forEach(task => task.remove());
+                    }
+                    elementToDelete.remove();
+                });
+
+                activateElement(null);
+                clearLassoSelection();
+                disableTextMode();
+                saveDrawingState();
+            });
+        }
+
+        function saveDrawingState() {
+            if ((window.taskManager && window.taskManager.taskMode) || joinManager.isDraggingHandle) return;
+            
+            const drawingToSave = collectCurrentDrawingData();
+            drawingToSave.id = 'current';
+            
+            html2canvas(canvasContainer, {
+                backgroundColor: null,
+                scale: 0.5,
+                logging: false,
+                useCORS: true
+            }).then(thumbCanvas => {
+                drawingToSave.thumbnail = thumbCanvas.toDataURL('image/png');
+                updateSavedDrawing('current', drawingToSave);
+            }).catch(error => {
+                console.error("Error generating thumbnail:", error);
+                updateSavedDrawing('current', drawingToSave);
+            });
+        }
+
+        function recreateElement(data) {
+            let element;
+            if (data.type === 'text') {
+                element = document.createElement('div');
+                element.className = 'text-container';
+                element.innerText = data.text;
+                element.style.fontFamily = data.fontFamily;
+                element.style.fontSize = data.fontSize;
+                element.style.color = data.textColor;
+            } else if (data.type === 'image' || data.type === 'component') {
+                element = document.createElement('div');
+                element.className = data.type === 'image' ? 'image-container' : 'component-container';
+                if (data.type === 'component') {
+                    element.dataset.componentType = data.componentType;
+                    element.innerText = data.text;
+                    element.style.fontSize = data.fontSize || '12px';
+                    element.style.fontFamily = data.fontFamily || 'Roboto';
+                    element.style.color = data.textColor || '#000000';
+                }
+                element.innerHTML = data.svgContent;
+            } else if (data.type === 'line') {
+                element = document.createElement('div');
+                element.className = 'line-container';
+            } else if (data.type === 'drawing') {
+                element = document.createElement('div');
+                element.className = 'drawing-container';
+                element.innerHTML = data.svgContent;
+
+                const svg = element.querySelector('svg');
+                if (svg) {
+                    try {
+                        const vbX = data.bboxX || 0, vbY = data.bboxY || 0, vbWidth = data.bboxWidth || 1, vbHeight = data.bboxHeight || 1;
+                        svg.setAttribute('viewBox', `${vbX} ${vbY} ${vbWidth} ${vbHeight}`);
+                    } catch (e) { console.warn("Error re-calculating BBox for loaded drawing:", e); }
+                }
+            } else if (data.type === 'task-container') {
+                createMovableTaskDisplay({ x: data.left, y: data.top }, data.linkedElementId, data.assignedTasks, data.id, data.progress, { width: data.width, height: data.height, rotation: data.rotation });
+                return null;
+            } else {
+                return null;
+            }
+
+            if (!element) return null;
+
+            element.dataset.type = data.type;
+            element.dataset.id = data.id;
+            element.id = data.id;
+            element.style.left = `${data.left}px`;
+            element.style.top = `${data.top}px`;
+            element.style.width = `${data.width}px`;
+            element.style.height = `${data.height}px`;
+            element.style.transform = `rotate(${data.rotation || 0}deg)`;
+            element.style.zIndex = ++elementCounter;
+
+            addHandles(element);
+            drawingBoard.appendChild(element);
+
+            return element;
+        }
+
+
+        function loadDrawingState(drawing) {
+            clearBoard(true);
+            currentDrawingId = drawing.id;
+
+            if (drawing.elements) {
+                drawing.elements.forEach(data => {
+                    recreateElement(data);
+                });
+            }
+
+            panX = drawing.boardState ? drawing.boardState.panX || 0 : 0;
+            panY = drawing.boardState ? drawing.boardState.panY || 0 : 0;
+            scale = drawing.boardState ? drawing.boardState.scale || 1 : 1;
+            
+            applyBoardTransform();
+            updateZoomDisplay();
+
+            if(window.taskManager) {
+                window.taskManager.restoreAllTaskDisplays();
+                window.taskManager.enableTaskHoverHighlight();
+            }
+            joinManager.loadConnections(drawing.connections);
+
+            saveDrawingState();
+
+            showCustomAlert(`Drawing "${drawing.name || 'Current Session'}" loaded successfully!`);
+        }
+
+        function loadDrawings() {
+            const storedData = localStorage.getItem(`circuitDrawings_${loggedInUsername}`);
+            if (storedData) {
+                savedDrawingsData = JSON.parse(storedData);
+            } else {
+                savedDrawingsData = [];
+            }
+            renderSavedDrawings();
+        }
+
+        function saveCanvas() {
+            const existingDrawing = savedDrawingsData.find(d => d.id === currentDrawingId);
+
+            if (existingDrawing && currentDrawingId !== 'current') {
+                const drawingToSave = collectCurrentDrawingData();
+                drawingToSave.id = existingDrawing.id;
+                drawingToSave.name = existingDrawing.name;
+                
+                html2canvas(canvasContainer, {
+                    backgroundColor: null,
+                    scale: 0.5,
+                    logging: false,
+                    useCORS: true
+                }).then(thumbCanvas => {
+                    drawingToSave.thumbnail = thumbCanvas.toDataURL('image/png');
+                    updateSavedDrawing(drawingToSave.id, drawingToSave);
+                    showCustomAlert(`Drawing "${drawingToSave.name}" updated successfully!`);
+                }).catch(error => {
+                    console.error("Error generating thumbnail for update:", error);
+                    updateSavedDrawing(drawingToSave.id, drawingToSave);
+                    showCustomAlert(`Drawing "${drawingToSave.name}" updated (without thumbnail due to an error).`);
+                });
+            } else {
+                showCustomPrompt("Enter a name for this drawing:", (name) => {
+                    if (!name || name.trim() === '') {
+                        showCustomAlert("Save cancelled. Please provide a name.");
+                        return;
+                    }
+
+                    const drawingToSave = collectCurrentDrawingData();
+                    const newId = `saved-${Date.now()}`;
+                    drawingToSave.id = newId;
+                    drawingToSave.name = name.trim();
+                    
+                    html2canvas(canvasContainer, {
+                        backgroundColor: null,
+                        scale: 0.5,
+                        logging: false,
+                        useCORS: true
+                    }).then(thumbCanvas => {
+                        drawingToSave.thumbnail = thumbCanvas.toDataURL('image/png');
+                        updateSavedDrawing(drawingToSave.id, drawingToSave);
+                        currentDrawingId = newId;
+                        showCustomAlert(`Drawing "${name}" saved successfully!`);
+                    }).catch(error => {
+                        console.error("Error generating thumbnail for save:", error);
+                        updateSavedDrawing(drawingToSave.id, drawingToSave);
+                        currentDrawingId = newId;
+                        showCustomAlert(`Drawing "${name}" saved (without thumbnail due to an error).`);
+                    });
+                }, "My Drawing");
+            }
+        }
+           
+
+        function collectCurrentDrawingData() {
+            const elements = [];
+            drawingBoard.querySelectorAll('.image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container').forEach(el => {
+                const type = el.dataset.type;
+                const id = el.dataset.id;
+                const left = parseFloat(el.style.left);
+                const top = parseFloat(el.style.top);
+                const width = parseFloat(el.style.width);
+                const height = parseFloat(el.style.height);
+                const rotation = getRotationFromElement(el);
+
+                let data = { type, id, left, top, width, height, rotation };
+
+                if (type === 'text') {
+                    data.text = el.innerText;
+                    data.fontFamily = el.style.fontFamily;
+                    data.fontSize = el.style.fontSize;
+                    data.textColor = el.style.color;
+                } else if (type === 'image' || type === 'component') {
+                    data.svgContent = el.querySelector('svg') ? el.querySelector('svg').outerHTML : '';
+                    if (el.dataset.assignedTasks) { 
+                       data.assignedTasks = JSON.parse(el.dataset.assignedTasks);
+                    }
+                    if (type === 'component') {
+                         data.text = el.innerText;
+                         data.fontFamily = el.style.fontFamily;
+                         data.fontSize = el.style.fontSize;
+                         data.textColor = el.style.color;
+                    }
+                } else if (type === 'line') {
+                    const currentLineX = parseFloat(el.style.left);
+                    const currentLineY = parseFloat(el.style.top) + (parseFloat(el.style.height) / 2);
+                    const currentLength = parseFloat(el.style.width);
+                    const currentAngleRad = parseFloat(getRotationFromElement(el)) * Math.PI / 180;
+                    data.startX = currentLineX;
+                    data.startY = currentLineY;
+                    data.endX = currentLineX + currentLength * Math.cos(currentAngleRad);
+                    data.endY = currentLineY + currentLength * Math.sin(currentAngleRad);
+                } else if (type === 'drawing') {
+                    data.svgContent = el.querySelector('svg') ? el.querySelector('svg').outerHTML : '';
+                    const svg = el.querySelector('svg');
+                    if (svg) {
+                         try {
+                            const viewBox = svg.getAttribute('viewBox');
+                            if (viewBox) {
+                                const [vbX, vbY, vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+                                data.bboxX = vbX; data.bboxY = vbY; data.bboxWidth = vbWidth; data.bboxHeight = vbHeight;
+                            }
+                        } catch (e) { console.warn("Error collecting BBox for drawing:", e); }
+                    }
+                } else if (type === 'task-container') {
+                    data.linkedElementId = el.dataset.linkedElementId;
+                    data.assignedTasks = JSON.parse(el.dataset.assignedTasks);
+                    data.progress = parseInt(el.dataset.progress, 10);
+                }
+                
+                elements.push(data);
+            });
+
+            return {
+                elements: elements,
+                boardState: { panX, panY, scale },
+                connections: joinManager.connections,
+                timestamp: new Date().toLocaleString()
+            };
+        }
+
+        function updateSavedDrawing(id, updatedDrawing) {
+            const index = savedDrawingsData.findIndex(d => d.id === id);
+            if (index !== -1) {
+                savedDrawingsData[index] = updatedDrawing;
+            } else {
+                savedDrawingsData.push(updatedDrawing);
+            }
+            localStorage.setItem(`circuitDrawings_${loggedInUsername}`, JSON.stringify(savedDrawingsData));
+            renderSavedDrawings();
+        }
+
+        function renderSavedDrawings() {
+            savedList.innerHTML = '';
+            savedDrawingsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            const currentIndex = savedDrawingsData.findIndex(d => d.id === 'current');
+            if (currentIndex !== -1) {
+                const currentDrawing = savedDrawingsData[currentIndex];
+                savedList.appendChild(createSavedDrawingThumbnail(currentDrawing, true));
+            }
+
+            savedDrawingsData.filter(d => d.id !== 'current').forEach(drawing => {
+                savedList.appendChild(createSavedDrawingThumbnail(drawing));
+            });
+        }
+
+        function createSavedDrawingThumbnail(drawing, isCurrent = false) {
+            const thumbDiv = document.createElement('div');
+            thumbDiv.className = 'saved-thumb';
+            thumbDiv.dataset.id = drawing.id;
+
+            const nameSpan = document.createElement('strong');
+            nameSpan.innerText = isCurrent ? 'Current Session (Unsaved)' : drawing.name;
+            thumbDiv.appendChild(nameSpan);
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.style.display = 'block';
+            timestampSpan.style.fontSize = '0.8em';
+            timestampSpan.style.color = '#666';
+            timestampSpan.innerText = drawing.timestamp;
+            thumbDiv.appendChild(timestampSpan);
+
+            if (drawing.thumbnail) {
+                const img = document.createElement('img');
+                img.src = drawing.thumbnail;
+                thumbDiv.appendChild(img);
+            }
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = 'display: flex; flex-direction: column; gap: 4px; margin-top: 8px; align-items: stretch;';
+
+            const loadBtn = document.createElement('button');
+            loadBtn.innerText = 'Load';
+            loadBtn.onclick = () => loadDrawingState(drawing);
+            loadBtn.style.cssText = 'padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;';
+            loadBtn.onmouseover = (e) => e.target.style.backgroundColor = '#0056b3';
+            loadBtn.onmouseout = (e) => e.target.style.backgroundColor = '#007bff';
+            buttonContainer.appendChild(loadBtn);
+
+            if (currentAppMode === 'client') {
+                const downloadBtn = document.createElement('button');
+                downloadBtn.innerText = 'Download';
+                downloadBtn.className = 'download-btn';
+                downloadBtn.onclick = () => downloadDrawing(drawing);
+                downloadBtn.style.cssText = 'padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;';
+                downloadBtn.onmouseover = (e) => e.target.style.backgroundColor = '#218838';
+                downloadBtn.onmouseout = (e) => e.target.style.backgroundColor = '#28a745';
+                buttonContainer.appendChild(downloadBtn);
+            }
+
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerText = 'Delete';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.onclick = () => deleteDrawing(drawing.id);
+            deleteBtn.style.cssText = 'padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;';
+            deleteBtn.onmouseover = (e) => e.target.style.backgroundColor = '#c82333';
+            deleteBtn.onmouseout = (e) => e.target.style.backgroundColor = '#dc3545';
+            if (isCurrent) {
+                deleteBtn.disabled = true;
+                deleteBtn.style.backgroundColor = '#cccccc';
+                deleteBtn.style.cursor = 'not-allowed';
+            }
+            buttonContainer.appendChild(deleteBtn);
+
+            thumbDiv.appendChild(buttonContainer);
+            return thumbDiv;
+        }
+
+        function deleteDrawing(idToDelete) {
+            showCustomConfirm('Are you sure you want to delete this drawing?', (confirmed) => {
+                if (confirmed) {
+                    savedDrawingsData = savedDrawingsData.filter(drawing => drawing.id !== idToDelete);
+                    localStorage.setItem(`circuitDrawings_${loggedInUsername}`, JSON.stringify(savedDrawingsData));
+                    renderSavedDrawings();
+                    showCustomAlert("Drawing deleted successfully!");
+                }
+            });
+        }
+
+        function downloadDrawing(drawing) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawing, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `${drawing.name || 'drawing'}.json`);
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            document.body.removeChild(dlAnchorElem);
+        }
+        
+         
+        function createMovableTaskDisplay(position, linkedId, tasks, existingId = null, progress = 0, dimensions = null) {
+            if (tasks.length > 1) {
+                let yOffset = 0;
+                tasks.forEach(task => {
+                    const newPosition = { x: position.x, y: position.y + yOffset };
+                    createMovableTaskDisplay(newPosition, linkedId, [task], null, progress, dimensions);
+                    yOffset += 50;
+                });
+                saveDrawingState();
+                return;
+            }
+            
+            const task = tasks[0] || 'Unnamed Task';
+            
+            const taskContainer = document.createElement('div');
+            const taskContainerId = existingId || `task-${Date.now()}`;
+            taskContainer.className = 'task-container';
+            taskContainer.dataset.type = 'task-container';
+            taskContainer.dataset.id = taskContainerId;
+            taskContainer.id = taskContainerId;
+            taskContainer.dataset.linkedElementId = linkedId;
+            taskContainer.dataset.assignedTasks = JSON.stringify(tasks);
+            taskContainer.dataset.progress = progress;
+
+            taskContainer.style.left = `${position.x}px`;
+            taskContainer.style.top = `${position.y}px`;
+            taskContainer.style.width = 'auto'; 
+            taskContainer.style.height = 'auto';
+            taskContainer.style.transform = `rotate(${dimensions ? dimensions.rotation : 0}deg)`;
+            taskContainer.style.zIndex = ++elementCounter;
+
+            const displayProgress = (currentAppMode === 'client' && progress == 0) ? 50 : progress;
+
+            const taskColor = (window.taskManager && window.taskManager.taskColors[task]) ? window.taskManager.taskColors[task] : '#34495e';
+            const taskBgColor = taskColor + '20';
+
+            taskContainer.innerHTML = `
+                <div class="task-row" style="background-color: ${taskBgColor};">
+                    <span class="task-name" style="color: ${taskColor};">${task}:</span>
+                    <span class="task-progress-value">${displayProgress}%</span>
+                </div>
+            `;
+            
+            addHandles(taskContainer);
+            drawingBoard.appendChild(taskContainer);
+            if (window.taskManager) {
+                window.taskManager.enableTaskHoverHighlight();
+            }
+        }
+        
+        function getElementCenter(elementId) {
+            const element = drawingBoard.querySelector(`[data-id='${elementId}']`);
+            if (!element) return null;
+            
+            const left = parseFloat(element.style.left);
+            const top = parseFloat(element.style.top);
+            const width = parseFloat(element.style.width);
+            const height = parseFloat(element.style.height);
+
+            return {
+                x: left + width / 2,
+                y: top + height / 2
+            };
+        }
+        
+        function updateAllTaskDisplays() {
+            drawingBoard.querySelectorAll('.task-container').forEach(taskContainer => {
+                const progress = parseInt(taskContainer.dataset.progress, 10);
+                const displayProgress = (currentAppMode === 'client' && progress == 0) ? 50 : progress;
+                
+                taskContainer.querySelectorAll('.task-progress-value').forEach(label => {
+                    label.textContent = `${displayProgress}%`;
+                });
+            });
+        }
+
+        function getElementBoundingBox(element) {
+            const left = parseFloat(element.style.left);
+            const top = parseFloat(element.style.top);
+            const width = parseFloat(element.style.width);
+            const height = parseFloat(element.style.height);
+            const rotation = getRotationFromElement(element) * (Math.PI / 180);
+
+            const centerX = left + width / 2;
+            const centerY = top + height / 2;
+
+            const corners = [
+                { x: -width / 2, y: -height / 2 }, { x: width / 2, y: -height / 2 },
+                { x: width / 2, y: height / 2 }, { x: -width / 2, y: height / 2 }
+            ];
+
+            return corners.map(corner => ({
+                x: centerX + (corner.x * Math.cos(rotation) - corner.y * Math.sin(rotation)),
+                y: centerY + (corner.x * Math.sin(rotation) + corner.y * Math.cos(rotation))
+            }));
+        }
+
+        function isPointInPolygon(point, polygon) {
+            let isInside = false;
+            const x = point.x, y = point.y;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x, yi = polygon[i].y;
+                const xj = polygon[j].x, yj = polygon[j].y;
+                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) isInside = !isInside;
+            }
+            return isInside;
+        }
+        
+        function isPolygonIntersecting(elementBox, lassoPath) {
+            for (const corner of elementBox) {
+                if (isPointInPolygon(corner, lassoPath)) return true;
+            }
+            const centerX = (elementBox[0].x + elementBox[2].x) / 2;
+            const centerY = (elementBox[0].y + elementBox[2].y) / 2;
+            if (isPointInPolygon({x: centerX, y: centerY}, lassoPath)) return true;
+            return false;
+        }
+
+        function selectElementsInLasso() {
+            const allElements = drawingBoard.querySelectorAll('.image-container, .text-container, .line-container, .component-container, .drawing-container, .task-container');
+            const virtualLassoPath = lassoPath.map(p => screenToVirtual(p.x + canvasContainer.getBoundingClientRect().left, p.y + canvasContainer.getBoundingClientRect().top));
+
+            allElements.forEach(el => {
+                const bbox = getElementBoundingBox(el);
+                if (isPolygonIntersecting(bbox, virtualLassoPath)) {
+                    selectedElements.add(el);
+                    el.classList.add('selected-by-lasso');
+                }
+            });
+        }
+
+        function copySelectedWithConnections() {
+            let elementsToCopy = Array.from(selectedElements);
+            if (elementsToCopy.length === 0 && activeElement) {
+                elementsToCopy = [activeElement];
+            }
+            if (elementsToCopy.length === 0) {
+                showCustomAlert("Please select elements to copy.");
+                return;
+            }
+
+            const selectedIds = elementsToCopy.map(el => el.dataset.id);
+
+            clipboard = {
+                elements: elementsToCopy.map(el => {
+                    const style = window.getComputedStyle(el);
+                    const data = {
+                        type: el.dataset.type,
+                        originalId: el.dataset.id,
+                        style: {
+                            left: el.style.left,
+                            top: el.style.top,
+                            width: el.style.width,
+                            height: el.style.height,
+                            transform: el.style.transform || '',
+                            fontFamily: style.fontFamily,
+                            fontSize: style.fontSize,
+                            color: style.color
+                        },
+                        html: el.outerHTML,
+                    };
+                    if (el.dataset.type === 'text') data.text = el.innerText;
+                    return data;
+                }),
+                connections: joinManager.connections.filter(c =>
+                    selectedIds.includes(c.from) && selectedIds.includes(c.to)
+                )
+            };
+            showCustomAlert(`Copied ${clipboard.elements.length} element(s).`);
+        }
+
+        function pasteCopiedWithConnections() {
+            if (!clipboard || !clipboard.elements) return;
+
+            clearLassoSelection();
+            if(activeElement) activateElement(null);
+
+            const targetPos = lastMousePos || { x: 100, y: 100 };
+
+            let totalX = 0, totalY = 0;
+            clipboard.elements.forEach(item => {
+                totalX += parseFloat(item.style.left);
+                totalY += parseFloat(item.style.top);
+            });
+
+            const avgX = totalX / clipboard.elements.length || 0;
+            const avgY = totalY / clipboard.elements.length || 0;
+
+            const offsetX = targetPos.x - avgX;
+            const offsetY = targetPos.y - avgY;
+
+            const idMap = new Map();
+
+            clipboard.elements.forEach(item => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = item.html;
+                const el = wrapper.firstChild;
+
+                const newId = `${item.originalId.split('-')[0]}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+                idMap.set(item.originalId, newId);
+                el.dataset.id = newId;
+
+                el.style.left = (parseFloat(item.style.left) + offsetX) + 'px';
+                el.style.top = (parseFloat(item.style.top) + offsetY) + 'px';
+                
+                drawingBoard.appendChild(el);
+                addHandles(el);
+                selectedElements.add(el);
+                el.classList.add('selected-by-lasso');
+            });
+
+            clipboard.connections.forEach(conn => {
+                const newFrom = idMap.get(conn.from);
+                const newTo = idMap.get(conn.to);
+                if (newFrom && newTo) {
+                    joinManager.createConnection(newFrom, newTo, conn.fromPoint, conn.toPoint);
+                }
+            });
+
+            joinManager.drawAllConnections();
+            saveDrawingState();
+        }
+
+       document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'c') {
+                    e.preventDefault();
+                    copySelectedWithConnections();
+                }
+                if (e.key === 'v') {
+                    e.preventDefault();
+                    pasteCopiedWithConnections();
+                }
+            }
+        });
+        
+        canvasContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (clipboard && clipboard.elements && clipboard.elements.length > 0) {
+                lastMousePos = screenToVirtual(e.clientX, e.clientY);
+                pasteCopiedWithConnections();
+            }
+        });
+
+        // START: Theme switching logic
+        const themeButton = document.getElementById('themeButton');
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            if (document.body.classList.contains('light-mode')) {
+                themeButton.innerHTML = '🌙 Dark Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                themeButton.innerHTML = '☀️ Light Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function applyInitialTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                themeButton.innerHTML = '🌙 Dark Mode';
+            } else {
+                themeButton.innerHTML = '☀️ Light Mode';
+            }
+        }
+        // END: Theme switching logic
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyInitialTheme(); // Apply theme on load
+            gridManager = new GridManager(drawingBoard, canvasContainer, () => scale, () => ({ panX, panY }));
+
+            setAppMode(localStorage.getItem('currentAppMode') || 'server');
+            renderUploadedSvgs();
+            
+            loadDrawings(); 
+            
+            const currentDrawing = savedDrawingsData.find(d => d.id === 'current');
+
+            if (currentDrawing && currentDrawing.boardState) {
+                loadDrawingState(currentDrawing);
+            } else {
+                clearBoard(true);
+                resetView();
+            }
+            deactivateAllTools();
+
+            lineWidthInput.value = currentLineWidth;
+            lineWidthInput.addEventListener('input', (e) => {
+                currentLineWidth = parseInt(e.target.value);
+                if (activeLineElement) {
+                
+                    activeLineElement.style.height = `${currentLineWidth}px`;
+                }
+            });
+
+            const leftToggle = document.getElementById('left-sidebar-toggle');
+            const rightToggle = document.getElementById('right-sidebar-toggle');
+
+            leftToggle.addEventListener('click', () => {
+                appContainer.classList.toggle('sidebar-open');
+                setTimeout(() => {
+                   if(joinManager) joinManager.resizeCanvas();
+                   if(gridManager) gridManager.drawGrid();
+                }, 300);
+            });
+
+            rightToggle.addEventListener('click', () => {
+                appContainer.classList.toggle('save-panel-open');
+                 setTimeout(() => {
+                   if(joinManager) joinManager.resizeCanvas();
+                   if(gridManager) gridManager.drawGrid();
+                }, 300);
+            });
+        });
+
+        function setUIMode(isClient) {
+            const isSidebarOpen = appContainer.classList.contains('sidebar-open');
+            if (isClient && isSidebarOpen) {
+                appContainer.classList.remove('sidebar-open');
+            }
+            document.getElementById('left-sidebar-toggle').style.display = isClient ? 'none' : 'block';
+            
+            saveBtn.style.display = isClient ? 'none' : 'block';
+            
+            const gridBtn = document.getElementById('gridToggleBtn');
+            const snapBtn = document.getElementById('snapToggleBtn');
+            if (gridBtn) gridBtn.style.display = isClient ? 'none' : '';
+            if (snapBtn) snapBtn.style.display = isClient ? 'none' : '';
+
+
+            document.querySelectorAll('#toolbar .tool-btn').forEach(btn => {
+                 if (!['gridToggleBtn', 'snapToggleBtn'].includes(btn.id)) {
+                    btn.style.display = isClient ? 'none' : '';
+                }
+            });
+
+            if (isClient) {
+                modeButton.innerText = 'Go to Server View';
+                modeButton.style.backgroundColor = '#dc3545';
+            } else {
+                modeButton.innerText = 'Go to Client View';
+                modeButton.style.backgroundColor = '#5cb85c';
+            }
+
+            renderUploadedSvgs();
+            renderSavedDrawings();
+            updateAllTaskDisplays();
+            
+            if(window.taskManager && window.taskManager.taskMode){
+                 window.taskManager.toggleTaskMode(); 
+            }
+            
+            if (joinManager.handlesContainer) {
+                joinManager.handlesContainer.style.display = isClient ? 'none' : 'block';
+            }
+
+             setTimeout(() => {
+                if(joinManager) joinManager.resizeCanvas();
+                if(gridManager) gridManager.drawGrid();
+            }, 300);
+        }
+
+        function toggleMode() {
+            currentAppMode = currentAppMode === 'server' ? 'client' : 'server';
+            setUIMode(currentAppMode === 'client');
+        }
+
+        function setAppMode(mode) {
+            currentAppMode = mode;
+            loggedInAsMode = mode;
+            setUIMode(currentAppMode === 'client');
+        }
+
+        document.getElementById('textInput').addEventListener('input', updateActiveTextElement);
+        document.getElementById('fontFamily').addEventListener('change', updateActiveTextElement);
+        document.getElementById('fontSize').addEventListener('input', updateActiveTextElement);
+        document.getElementById('textColor').addEventListener('input', updateActiveTextElement);
+           document.addEventListener('DOMContentLoaded', () => {
+            const customDrawingModal = document.getElementById('customDrawingModal');
+            const allToolButtons = customDrawingModal.querySelectorAll('#customShapeTools .tool-btn, #rightSideTools .tool-btn');
+
+            allToolButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    allToolButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
