@@ -4,8 +4,6 @@ A feature-rich, browser-based diagram editor built from the ground up with vanil
 
 The application provides a complete creative suite for visual design and planning, uniquely integrating a task management system directly onto the design components.
 
-Live Demo: A live version of the editor can be found here: https://your-deployment-link-here.com
-
 Key Features
 The editor provides a robust set of features for a seamless design and planning experience.
 
