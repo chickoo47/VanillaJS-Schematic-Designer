@@ -36,7 +36,7 @@ Usage
 To use the editor, first you need to clone the repository:
 
 Bash
-git clone https://github.com/your-username/VanillaJS-Diagram-Editor.git
+git clone https://github.com/chickoo47/VanillaJS-Schematic-Designer.git
 cd VanillaJS-Diagram-Editor
 Next, follow the Installation & Setup instructions below to run the backend server.
 
